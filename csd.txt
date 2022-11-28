@@ -1,0 +1,137 @@
+RANDOM FOREST
+
+library(caTools)
+library(randomForest)
+library(help="datasets")
+summary(iris)
+str(iris)
+
+split<-sample.split(iris,SplitRatio=0.7)
+split
+
+train<-subset(iris,split=="TRUE")
+test<-subset(iris,split=="FALSE")
+
+set.seed(120)
+
+classifier=randomForest(x=train[-5],y=train$Species,ntree=500)
+classifier
+
+ypred=predict(classifier,newdata=test[-5])
+ypred
+
+confusionmat=table(test[,5],ypred)
+confusionmat
+
+plot(classifier)
+importance(classifier)
+varImpPlot(classifier)
+**************************************************
+
+K Means
+
+install.packages("ClusterR")
+library(cluster)
+library(ClusterR)
+
+data(iris)
+iris1<-iris[,-5]
+
+
+set.seed(240)
+classifier<-kmeans(iris1,centers = 3,nstart=20)
+classifier
+
+classifier$cluster
+
+confusionmat<-table(iris$Species,classifier$cluster)
+confusionmat
+
+plot(iris1[c('Sepal.Length','Sepal.Width')])
+plot(iris1[c('Sepal.Length','Sepal.Width')],col=classifier$cluster,main="kmeans with 3 clusters")
+
+classifier$centers
+classifier$centers[,c('Sepal.Length','Sepal.Width')]
+
+points(classifier$centers[,c('Sepal.Length','Sepal.Width')],col=1:3,pch=8)
+
+yk<-classifier$cluster
+clusplot(iris1[,c('Sepal.Length','Sepal.Width')],
+	yk,
+	color=TRUE, 
+	main = paste("Cluster iris"),
+        xlab = 'Sepal.Length',
+        ylab = 'Sepal.Width'))
+******************************************************
+Linear regression
+
+data(women)
+str(women)
+summary(women)
+
+library(caTools)
+split <- sample.split(women, SplitRatio = 0.7)
+train <- subset(women, split == TRUE)
+test <- subset(women, split == FALSE)
+
+classifier<-lm(women$height~women$weight,train)
+classifier
+summary(classifier)
+
+ypred = predict(classifier, newdata = test)
+ypred
+
+plot(train$height,train$weight,col = "blue",main = "Height & Weight Regression",
+     abline(lm(train$weight~train$height)),xlab = "Weight",ylab = "Height ")
+
+*******************************************************
+Logistic regression
+
+install.packages("ROCR")
+library(caTools)
+library(ROCR)
+
+str(mtcars)
+split <- sample.split(mtcars, SplitRatio = 0.8)
+split
+
+train <- subset(mtcars, split == "TRUE")
+test <- subset(mtcars, split == "FALSE")
+
+
+classifier<- glm(vs ~ wt + disp, 
+                      data = train, 
+                      family = "binomial")
+classifier
+summary(classifier)
+
+# Predict test data based on model
+ypred <- predict(classifier, 
+                       test, type = "response")
+ypred
+
+ypred <- ifelse(ypred >0.5, 1, 0)
+table(test$vs, ypred)
+
+missing_classerr <- mean(ypred != test$vs)
+print(paste('Accuracy =', 1 - missing_classerr))
+
+ROCPred <- prediction(ypred, test$vs) 
+ROCPer <- performance(ROCPred, measure = "tpr", 
+                      x.measure = "fpr")
+
+auc <- performance(ROCPred, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+
+# Plotting curve
+plot(ROCPer)
+plot(ROCPer, colorize = TRUE, 
+     print.cutoffs.at = seq(0.1, by = 0.1), 
+     main = "ROC CURVE")
+abline(a = 0, b = 1)
+
+auc <- round(auc, 4)
+legend(.6, .4, auc, title = "AUC", cex = 1)
+
+
